@@ -73,6 +73,14 @@ def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
 # Página principal do chat
 def pagina_chat():
     st.header('🤖 Welcome to VagnerGPT', divider=True)
+    st.markdown("""
+Welcome to your personal AI assistant!  
+Here you can:
+- 💬 Ask questions based on PDF files, CSV data, or websites.  
+- 📄 View the extracted content from the uploaded file.  
+- ⚙️ Choose the language model to generate responses.
+""")
+
     chain = st.session_state.get('chain')
 
     if chain is None:
@@ -121,7 +129,7 @@ def sidebar():
     with tabs[1]:
         provedor = st.selectbox('Select provider', list(modelosConfig.keys()))
         modelo = st.selectbox('Select model', modelosConfig[provedor]['modelos'])
-        apiKey = st.text_input('Enter your API key', type='password')
+        apiKey = st.secrets["GROQ_API_KEY"]
 
     if st.button('🚀 Load Model'):
         if not arquivo:
