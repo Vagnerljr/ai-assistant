@@ -1,0 +1,4 @@
+.\.venv\Scripts\Activate.ps1 - ativar o ambiente virtual
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser - Privilegios no PowerShell
+Get-ExecutionPolicy -List - Verificar acesso atual
+pip install -r requirements.txt
