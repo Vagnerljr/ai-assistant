@@ -1,11 +1,23 @@
-streamlit
-langchain
-langchain-community
-langchain-groq
-langchain-openai
-python-dotenv
-beautifulsoup4
-pypdf
-unstructured
-fake_useragent
-youtube_transcript_api
+# App
+streamlit==1.39.0
+python-dotenv==1.0.1
+
+# LangChain + integrações
+langchain==0.2.16
+langchain-core==0.2.41
+langchain-community==0.2.9
+langchain-groq==0.1.5
+
+# SDK da Groq (necessário pro ChatGroq)
+groq==0.11.0
+
+# Loaders básicos (site/csv/pdf)
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+pypdf==4.2.0
+pandas==2.2.3
+
+# Utilidades
+fake-useragent==1.5.1
+youtube-transcript-api==0.6.2
