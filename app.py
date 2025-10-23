@@ -4,19 +4,48 @@ from langchain_groq import ChatGroq
 from loader import *
 import tempfile
 from langchain.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 # Tipos e modelos disponíveis
 tipoArquivoValido = ['PDF', 'CSV', 'WebSite']
 modelosConfig = {
     'Groq': {
-        'modelos': ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'],
+        'modelos': [
+            'llama-3.3-70b-versatile',
+            'llama-3.1-8b-instant',
+            'meta-llama-4-maverick-17b-128e-instruct'
+        ],
         'chat': ChatGroq,
     },
 }
 
 # Inicializa memória no session_state
 if 'memoria' not in st.session_state:
-    st.session_state['memoria'] = ConversationBufferMemory()
+    st.session_state['memoria'] = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True
+    )
+
+def _normalize_documento(documento):
+    """Garante que 'documento' seja string, independentemente do loader."""
+    # Se for lista de strings
+    if isinstance(documento, list) and all(isinstance(x, str) for x in documento):
+        return "\n\n".join(documento)
+    # Se for lista de LangChain Documents
+    try:
+        from langchain.schema import Document
+        if isinstance(documento, list) and all(isinstance(d, Document) for d in documento):
+            return "\n\n".join([d.page_content for d in documento])
+    except Exception:
+        pass
+    # Se for um único Document
+    try:
+        if hasattr(documento, "page_content"):
+            return documento.page_content
+    except Exception:
+        pass
+    # Fallback: str()
+    return str(documento)
 
 # Carrega o conteúdo do arquivo
 def carregaArquivo(tipoArquivo, arquivo):
@@ -34,8 +63,7 @@ def carregaArquivo(tipoArquivo, arquivo):
         documento = carregaPDF(nomeTemp)
     else:
         documento = "Tipo de arquivo não suportado."
-    return documento
-
+    return _normalize_documento(documento)
 
 # Carrega o modelo e prepara a cadeia de conversação
 def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
@@ -47,14 +75,14 @@ def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
             return
 
         system_message = f'''Você é um assistente amigável chamado VagnerGPT. Você possui acesso às seguintes informações vindas de um documento do tipo {tipoArquivo}:
-        ####
-        {documento}
-        ####
-        Utilize as informações fornecidas para basear as suas respostas.
-        Sempre que houver $ em sua saída, substitua por S.
+####
+{documento}
+####
+Utilize as informações fornecidas para basear as suas respostas.
+Sempre que houver $ em sua saída, substitua por S.
 
-        Se a informação do documento for algo como "Just a moment...Enable JavaScript and cookies to continue", sugira ao usuário carregar novamente o modelo.
-        '''
+Se a informação do documento for algo como "Just a moment...Enable JavaScript and cookies to continue", sugira ao usuário carregar novamente o modelo.
+'''
 
         template = ChatPromptTemplate.from_messages([
             ('system', system_message),
@@ -63,12 +91,13 @@ def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
         ])
 
         chat = modelosConfig[provedor]['chat'](model=modelo, api_key=apiKey)
-        chain = template | chat
+
+        # Parser garante strings para o streaming no Streamlit
+        chain = template | chat | StrOutputParser()
         st.session_state['chain'] = chain
 
     except Exception as e:
         st.error(f"Erro ao carregar modelo ou documento: {e}")
-
 
 # Página principal do chat
 def pagina_chat():
@@ -89,19 +118,23 @@ Here you can:
 
     memoria = st.session_state['memoria']
 
-    # Exibe o histórico
+    # Exibe o histórico (mapeia 'human'/'ai' -> 'user'/'assistant')
     for mensagem in memoria.buffer_as_messages:
-        chat_msg = st.chat_message(mensagem.type)
+        role = 'user' if mensagem.type in ('human', 'user') else 'assistant'
+        chat_msg = st.chat_message(role)
         chat_msg.markdown(mensagem.content)
 
     input_usuario = st.chat_input('Talk to me')
 
     if input_usuario:
-        st.chat_message('human').markdown(input_usuario)
+        st.chat_message('user').markdown(input_usuario)
 
         # Executa o modelo e escreve a resposta em streaming
-        resposta_stream = chain.stream({'input': input_usuario, 'chat_history': memoria.buffer_as_messages})
-        resposta_chat = st.chat_message('ai')
+        resposta_stream = chain.stream({
+            'input': input_usuario,
+            'chat_history': memoria.buffer_as_messages
+        })
+        resposta_chat = st.chat_message('assistant')
         resposta_completa = resposta_chat.write_stream(resposta_stream)
 
         # Salva no histórico da memória
@@ -109,7 +142,6 @@ Here you can:
         memoria.chat_memory.add_ai_message(resposta_completa)
 
         st.session_state['memoria'] = memoria
-
 
 # Sidebar de configuração
 def sidebar():
@@ -138,13 +170,11 @@ def sidebar():
             with st.spinner("Carregando modelo e documento..."):
                 carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo)
 
-
 # Função principal
 def main():
     with st.sidebar:
         sidebar()
     pagina_chat()
-
 
 if __name__ == '__main__':
     main()
