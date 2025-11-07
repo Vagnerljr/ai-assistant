@@ -6,6 +6,7 @@ import tempfile
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+
 # Tipos e modelos disponíveis
 tipoArquivoValido = ['PDF', 'CSV', 'WebSite']
 modelosConfig = {
@@ -51,15 +52,17 @@ def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
             st.warning("O conteúdo do site não pôde ser carregado corretamente. Tente novamente.")
             return
 
-        system_message = f'''Você é um assistente amigável chamado VagnerGPT. Você possui acesso às seguintes informações vindas de um documento do tipo {tipoArquivo}:
+        system_message = f"""You are a friendly AI assistant named VagnerGPT.  
+You have access to the following information extracted from a {tipoArquivo} document:
 ####
 {documento}
 ####
-Utilize as informações fornecidas para basear as suas respostas.
-Sempre que houver $ em sua saída, substitua por S.
+Use the provided information as the foundation for your answers.  
+Whenever you need to display a dollar sign ($) in your output, replace it with the letter 'S'.
 
-Se a informação do documento for algo como "Just a moment...Enable JavaScript and cookies to continue", sugira ao usuário carregar novamente o modelo.
-'''
+If the document content includes text like "Just a moment... Enable JavaScript and cookies to continue", kindly suggest that the user reloads or reprocesses the model.
+"""
+
 
         template = ChatPromptTemplate.from_messages([
             ('system', system_message),
