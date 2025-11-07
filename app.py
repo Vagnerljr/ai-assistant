@@ -11,7 +11,7 @@ tipoArquivoValido = ['PDF', 'CSV', 'WebSite']
 modelosConfig = {
     'Groq': {
         'modelos': [
-            'gpt-5-nano'
+            'llama-3.3-70b-versatile'
         ],
         'chat': ChatGroq,
     },
@@ -67,7 +67,7 @@ Se a informação do documento for algo como "Just a moment...Enable JavaScript 
             ('user', '{input}')
         ])
 
-        chat = modelosConfig[provedor]['chat'](model=modelo, api_key=apiKey)
+        chat = modelosConfig[provedor]['chat'](model=modelo, groq_api_key=apiKey)
 
         # Parser garante strings para o streaming no Streamlit
         chain = template | chat | StrOutputParser()
