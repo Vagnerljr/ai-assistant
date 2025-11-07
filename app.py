@@ -40,7 +40,7 @@ def carregaArquivo(tipoArquivo, arquivo):
             nomeTemp = temp.name
         documento = carregaPDF(nomeTemp)
     else:
-        documento = "Tipo de arquivo não suportado."
+        documento = "File format not supported."
     return documento
 
 # Carrega o modelo e prepara a cadeia de conversação
@@ -49,7 +49,7 @@ def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
         documento = carregaArquivo(tipoArquivo, arquivo)
 
         if "Just a moment..." in documento:
-            st.warning("O conteúdo do site não pôde ser carregado corretamente. Tente novamente.")
+            st.warning("The content couldn't be loaded, try again.")
             return
 
         system_message = f"""You are a friendly AI assistant named VagnerGPT.  
@@ -77,7 +77,7 @@ If the document content includes text like "Just a moment... Enable JavaScript a
         st.session_state['chain'] = chain
 
     except Exception as e:
-        st.error(f"Erro ao carregar modelo ou documento: {e}")
+        st.error(f"Failed to load model: {e}")
 
 # Página principal do chat
 def pagina_chat():
@@ -93,7 +93,7 @@ Here you can:
     chain = st.session_state.get('chain')
 
     if chain is None:
-        st.error('Carregue o modelo antes de conversar.')
+        st.error('Upload a file to start!.')
         st.stop()
 
     memoria = st.session_state['memoria']
@@ -125,7 +125,7 @@ Here you can:
 
 # Sidebar de configuração
 def sidebar():
-    tabs = st.tabs(['📁 File Upload', '⚙️ Model Selection'])
+    tabs = st.tabs(['📁 File Upload'])
 
     with tabs[0]:
         tipoArquivo = st.selectbox('Select source type', tipoArquivoValido)
