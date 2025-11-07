@@ -11,9 +11,7 @@ tipoArquivoValido = ['PDF', 'CSV', 'WebSite']
 modelosConfig = {
     'Groq': {
         'modelos': [
-            'llama-3.3-70b-versatile',
-            'llama-3.1-8b-instant',
-            'meta-llama-4-maverick-17b-128e-instruct'
+            'gpt-5-nano'
         ],
         'chat': ChatGroq,
     },
@@ -25,27 +23,6 @@ if 'memoria' not in st.session_state:
         memory_key="chat_history",
         return_messages=True
     )
-
-def _normalize_documento(documento):
-    """Garante que 'documento' seja string, independentemente do loader."""
-    # Se for lista de strings
-    if isinstance(documento, list) and all(isinstance(x, str) for x in documento):
-        return "\n\n".join(documento)
-    # Se for lista de LangChain Documents
-    try:
-        from langchain.schema import Document
-        if isinstance(documento, list) and all(isinstance(d, Document) for d in documento):
-            return "\n\n".join([d.page_content for d in documento])
-    except Exception:
-        pass
-    # Se for um único Document
-    try:
-        if hasattr(documento, "page_content"):
-            return documento.page_content
-    except Exception:
-        pass
-    # Fallback: str()
-    return str(documento)
 
 # Carrega o conteúdo do arquivo
 def carregaArquivo(tipoArquivo, arquivo):
@@ -63,7 +40,7 @@ def carregaArquivo(tipoArquivo, arquivo):
         documento = carregaPDF(nomeTemp)
     else:
         documento = "Tipo de arquivo não suportado."
-    return _normalize_documento(documento)
+    return documento
 
 # Carrega o modelo e prepara a cadeia de conversação
 def carregaModelo(provedor, modelo, apiKey, tipoArquivo, arquivo):
@@ -158,12 +135,12 @@ def sidebar():
         else:
             arquivo = None
 
-    with tabs[1]:
-        provedor = st.selectbox('Select provider', list(modelosConfig.keys()))
-        modelo = st.selectbox('Select model', modelosConfig[provedor]['modelos'])
+        provedor = 'Groq'
+        modelo = 'llama-3.3-70b-versatile'
         apiKey = st.secrets["GROQ_API_KEY"]
 
-    if st.button('🚀 Load Model'):
+
+    if st.button('🚀 Load file'):
         if not arquivo:
             st.warning("Você precisa fornecer um arquivo ou URL.")
         else:
